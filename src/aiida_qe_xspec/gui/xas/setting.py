@@ -17,7 +17,7 @@ class XasConfigurationSettingsPanel(
 
         self._model.observe(
             self._on_input_structure_change,
-            'input_structure',
+            'structure_uuid',
         )
 
     def render(self):
@@ -130,14 +130,9 @@ class XasConfigurationSettingsPanel(
     def _on_input_structure_change(self, _):
         self.refresh(specific='structure')
 
-    def update(self, specific=''):
-        if self._model.updated:
-            return
+    def _update_ui(self):
         self._show_loading()
-        if not self._model.locked or (specific and specific != 'widgets'):
-            self._model.update(specific)
         self._build_core_hole_treatments_widget()
-        self.updated = True
 
     def _show_loading(self):
         if self.rendered:

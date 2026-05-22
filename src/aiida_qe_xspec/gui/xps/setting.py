@@ -218,14 +218,9 @@ class XpsConfigurationSettingsPanel(
             self.core_levels_container.layout.display = 'none'
             self.atom_indices_container.layout.display = None
 
-    def update(self, specific=''):
-        if self._model.updated:
-            return
+    def _update_ui(self):
         self._show_loading()
-        if not self._model.locked or (specific and specific != 'widgets'):
-            self._model.update(specific)
         self._build_core_levels_widget()
-        self.updated = True
 
     def _show_loading(self):
         if self.rendered:

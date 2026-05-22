@@ -5,16 +5,16 @@ import traitlets as tl
 import yaml
 
 from aiidalab_qe.common.mixins import HasInputStructure
-from aiidalab_qe.common.panel import ConfigurationSettingsModel
+from aiidalab_qe.common.panel import PanelModel
 from aiida_qe_xspec.gui import xas as xas_folder
 
 
-class XasConfigurationSettingsModel(ConfigurationSettingsModel, HasInputStructure):
+class XasConfigurationSettingsModel(PanelModel, HasInputStructure):
     title = 'XAS'
     identifier = 'xas'
 
     dependencies = [
-        'input_structure',
+        'structure_uuid',
     ]
 
     # structure_type_options = tl.List(
@@ -54,7 +54,7 @@ class XasConfigurationSettingsModel(ConfigurationSettingsModel, HasInputStructur
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def update(self, specific=''):  # noqa: ARG002
+    def _update(self, specific=''):
         with self.hold_trait_notifications():
             self._update_pseudo_data_dict()
             self._update_core_hole_treatment_recommendations()

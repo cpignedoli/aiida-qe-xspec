@@ -57,7 +57,7 @@ class XpsConfigurationSettingsModel(PanelModel, HasInputStructure):
     atom_indices = tl.List(trait=tl.Int(), default_value=[])
     band_gap_correction = tl.Float(0.0)
 
-    def update(self, specific=''):
+    def _update(self, specific=''):
         with self.hold_trait_notifications():
             self._update_correction_energies()
 
