@@ -13,7 +13,10 @@ class XpsConfigurationSettingsModel(PanelModel, HasInputStructure):
 
     dependencies = [
         'structure_uuid',
+        'advanced.pseudos.functional',
     ]
+
+    functional = tl.Unicode(allow_none=True)
 
     core_hole_treatment_options = tl.List(
         trait=tl.List(tl.Unicode()),
@@ -113,3 +116,12 @@ class XpsConfigurationSettingsModel(PanelModel, HasInputStructure):
         except NotExistent:
             self.correction_energies = {}
             # TODO What if the group does not exist? Should we proceed? Can this happen?
+
+    def _check_blockers(self):
+        functional = str(self.functional).lower()
+        pseudo_group = str(self.pseudo_group).split('_')[1]
+        if functional != pseudo_group:
+            yield (
+                f'The selected functional "{self.functional}" does not match '
+                f'the XPS pseudo group "{self.pseudo_group}".'
+            )

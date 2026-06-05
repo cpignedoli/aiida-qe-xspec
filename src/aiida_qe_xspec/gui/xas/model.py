@@ -15,6 +15,7 @@ class XasConfigurationSettingsModel(PanelModel, HasInputStructure):
 
     dependencies = [
         'structure_uuid',
+        'advanced.pseudos.functional',
     ]
 
     # structure_type_options = tl.List(
@@ -28,6 +29,9 @@ class XasConfigurationSettingsModel(PanelModel, HasInputStructure):
 
     supercell_min_parameter = tl.Float(8.0)
 
+    functional = tl.Unicode(allow_none=True)
+    pseudo_group = tl.Unicode('xas_pbe')
+
     kind_names = tl.Dict(
         key_trait=tl.Unicode(),  # kind name
         value_trait=tl.Bool(),  # whether the element is included
@@ -35,8 +39,8 @@ class XasConfigurationSettingsModel(PanelModel, HasInputStructure):
     core_hole_treatments_options = tl.List(
         trait=tl.List(tl.Unicode()),
         default_value=[
-            ['full', 'Full'],
-            ['excited', 'Excited'],
+            ['Full', 'full'],
+            ['Excited', 'excited'],
         ],
     )
     core_hole_treatments = tl.Dict(
@@ -101,7 +105,7 @@ class XasConfigurationSettingsModel(PanelModel, HasInputStructure):
         return list(self.kind_names)
 
     def get_recommendation(self, element):
-        return 'Excited' if element in self.xch_elements else 'Full'
+        return 'excited' if element in self.xch_elements else 'full'
 
     def reset(self):
         with self.hold_trait_notifications():
@@ -134,3 +138,12 @@ class XasConfigurationSettingsModel(PanelModel, HasInputStructure):
                 kind_name: self.get_recommendation(kind_name)
                 for kind_name in self.kind_names
             }
+
+    def _check_blockers(self):
+        functional = str(self.functional).lower()
+        pseudo_group = str(self.pseudo_group).split('_')[1]
+        if functional != pseudo_group:
+            yield (
+                f'The selected functional "{functional}" is not compatible with '
+                f'the functional "{pseudo_group}" required for XAS.'
+            )

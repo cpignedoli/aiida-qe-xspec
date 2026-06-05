@@ -10,14 +10,20 @@ from .model import XasConfigurationSettingsModel
 class XasConfigurationSettingsPanel(
     ConfigurationSettingsPanel[XasConfigurationSettingsModel],
 ):
-    # TODO: The element selection should lock the "Confirm" button if no elements have been selected for XAS calculation.
-
     def __init__(self, model: XasConfigurationSettingsModel, **kwargs):
         super().__init__(model, **kwargs)
 
         self._model.observe(
             self._on_input_structure_change,
             'structure_uuid',
+        )
+        self._model.observe(
+            self._on_functional_change,
+            'functional',
+        )
+        self._model.observe(
+            self._on_pseudo_group_change,
+            'pseudo_group',
         )
 
     def render(self):
@@ -129,6 +135,12 @@ class XasConfigurationSettingsPanel(
 
     def _on_input_structure_change(self, _):
         self.refresh(specific='structure')
+
+    def _on_functional_change(self, _):
+        self.refresh(specific='functional')
+
+    def _on_pseudo_group_change(self, _):
+        self.refresh(specific='pseudo_group')
 
     def _update_ui(self):
         self._show_loading()
