@@ -85,16 +85,16 @@ class XasConfigurationSettingsPanel(
                     There are two supported options for core-hole treatment:
                     <ul>
                         <li>
-                            FCH: Remove one electron from the system
+                            Full: Remove one electron from the system
                         </li>
                         <li>
-                            XCH: places the excited electron into the conduction band
+                            Excited: Place the excited electron into the conduction band
                         </li>
                     </ul>
                     <p style="margin-bottom: 10px;">
-                        For XAS calculations of most light elements, the FCH treatment is
+                        For XAS calculations of most light elements, the "Full" treatment is
                         recommended, however in some cases (e.g. transition metals) the
-                        XCH treatment should be used instead.
+                        "Excited" treatment should be used instead.
                     </p>
                     <p>
                         The recommended setting will be shown for each available element.
@@ -204,7 +204,7 @@ class XasConfigurationSettingsPanel(
                     treatment_selector,
                     ipw.HTML(
                         value=info.format(
-                            recommended=self._model.get_recommendation(kind_name)
+                            recommended=self._model.get_recommendation(kind_name).title()
                         ),
                         layout=ipw.Layout(width='78%'),
                     ),
