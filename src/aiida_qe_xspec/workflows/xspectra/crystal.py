@@ -10,7 +10,7 @@ from aiida.plugins import CalculationFactory, DataFactory, WorkflowFactory
 from aiida_pseudo.data.pseudo import UpfData as aiida_pseudo_upf
 
 from aiida_qe_xspec.calculations.functions.xspectra.get_spectra_by_element import get_spectra_by_element
-from aiida_quantumespresso.utils.hubbard import HubbardStructureData
+from aiida_quantumespresso.utils.hubbard import HubbardStructureData, get_index_and_translation
 from aiida_quantumespresso.utils.mapping import prepare_process_inputs
 from aiida_quantumespresso.workflows.protocols.utils import ProtocolMixin
 
@@ -517,6 +517,10 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
         from aiida_qe_xspec.workflows.functions.get_xspectra_structures import get_xspectra_structures
 
         elements_list = self.inputs.elements_list
+        if 'relax' in self.inputs:
+            input_structure = self.ctx.optimized_structure
+        else:
+            input_structure = self.inputs.structure
 
         inputs = {
             'absorbing_elements_list' : elements_list,
@@ -530,9 +534,40 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             for key, node in optional_cell_prep.items():
                 inputs[key] = node
 
-        if isinstance(self.inputs.structure, HubbardStructureData):
+        is_hubbard_structure = isinstance(input_structure, HubbardStructureData)
+        if is_hubbard_structure:
             # This must be False in the case of HubbardStructureData, otherwise get_xspectra_structures will except
             inputs['standardize_structure'] = orm.Bool(False)
+
+        if self.node.caller:
+            # The AiiDALab-QE App currently only initialises Hubbard parameters
+            # on the first Site for each Kind in the structure, which means we
+            # need to extract the Hubbard parameters for each Kind and then broadcast
+            # the parameters over all relevant sites.
+            if self.node.caller.process_label == 'QeAppWorkChain':
+                if is_hubbard_structure:
+                    import copy
+                    new_hsd = copy.deepcopy(input_structure)
+                    hub_dict = input_structure.hubbard.dict()
+                    for entry in hub_dict['parameters']:
+                        # ToDo: we will need to extend this to handle +V parameters,
+                        # though at present (05/06/2026) this is not implemented in AiiDALab-QE
+                        original_index, translation, value = entry['atom_index'], entry['translation'], entry['value']
+                        manifold, hubbard_type = entry['atom_manifold'], entry['hubbard_type']
+                        kind_at_site = new_hsd.sites[original_index].kind_name
+                        symbol_at_site = new_hsd.get_kind(new_hsd.sites[original_index].kind_name).symbol
+                        for index, site in enumerate(new_hsd.sites):
+                            if site.kind_name == kind_at_site and symbol_at_site in elements_list:
+                                new_hsd.append_hubbard_parameter(
+                                    atom_index=index,
+                                    atom_manifold=manifold,
+                                    neighbour_index=index,
+                                    neighbour_manifold=manifold,
+                                    value=value,
+                                    translation=translation,
+                                    hubbard_type=hubbard_type,
+                                )
+                    input_structure = new_hsd
 
         if 'spglib_settings' in self.inputs:
             inputs['spglib_settings'] = self.inputs.spglib_settings
@@ -543,10 +578,7 @@ class XspectraCrystalWorkChain(ProtocolMixin, WorkChain):
             inputs['equivalent_sites_data'] = input_sym_data['equivalent_sites_data']
             inputs['spacegroup_number'] = input_sym_data['spacegroup_number']
 
-        if 'relax' in self.inputs:
-            result = get_xspectra_structures(self.ctx.optimized_structure, **inputs)
-        else:
-            result = get_xspectra_structures(self.inputs.structure, **inputs)
+        result = get_xspectra_structures(input_structure, **inputs)
 
         supercell = result.pop('supercell')
         out_params = result.pop('output_parameters')
