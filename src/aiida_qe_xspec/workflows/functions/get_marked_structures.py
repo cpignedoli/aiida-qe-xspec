@@ -30,11 +30,18 @@ def get_marked_structures(structure, atom_indices, marker='X'):
 
         for i, site in enumerate(structure.sites):
             if i == index:
-                marked_kind = Kind(name=marker, symbols=site.kind_name)
+                site_kind = kinds[site.kind_name]
+                marked_kind = Kind(name=marker, symbols=site_kind.symbol)
                 marked_site = Site(kind_name=marked_kind.name, position=site.position)
                 marked_structure.append_kind(marked_kind)
                 marked_structure.append_site(marked_site)
-                output_params[f'site_{index}'] = {'symbol': site.kind_name, 'multiplicity': 1}
+                output_params[f'site_{index}'] = {
+                    'kind_name': site.kind_name,
+                    'symbol': site_kind.symbol,
+                    'site_index': index,
+                    'multiplicity': 1,
+                    'equivalent_sites_list': [index],
+                }
             else:
                 if site.kind_name not in [kind.name for kind in marked_structure.kinds]:
                     marked_structure.append_kind(kinds[site.kind_name])

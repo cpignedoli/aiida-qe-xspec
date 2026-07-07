@@ -3,6 +3,8 @@
 
 Returns a `dict` object with suitable inputs for a subsequent PwCalculation
 """
+from copy import deepcopy
+
 from aiida.common import ValidationError
 
 
@@ -53,14 +55,14 @@ def get_core_hole_inputs(structure, treatment, parameters, abs_site_data, **kwar
     abs_atom_marker = kwargs.get('abs_atom_marker', 'X')
     site_index = abs_site_data['site_index']
     abs_atom_kind = abs_site_data.get('kind_name', abs_site_data['symbol'])
-    updated_parameters = parameters.copy()
-    starting_mag = parameters['SYSTEM'].get('starting_magnetization', None)
-    if not starting_mag and parameters['SYSTEM'].get('nspin', None) == 2:
+    updated_parameters = deepcopy(parameters)
+    starting_mag = updated_parameters['SYSTEM'].get('starting_magnetization', None)
+    tot_mag = updated_parameters['SYSTEM'].get('tot_magnetization', None)
+    if not starting_mag and tot_mag is None and updated_parameters['SYSTEM'].get('nspin', None) == 2:
         raise ValidationError(
-            'A spin-polarised calculation was requested, but no starting magnetization was provided.'
+            'A spin-polarised calculation was requested, but neither starting nor total magnetization was provided.'
         )
-    tot_mag = parameters['SYSTEM'].get('tot_magnetization', None)
-    tot_charge = parameters['SYSTEM'].get('tot_charge', 0)
+    tot_charge = updated_parameters['SYSTEM'].get('tot_charge', 0)
     afm_inputs = {
         'structure': structure,
         'starting_mag': starting_mag,
@@ -120,24 +122,31 @@ def get_core_hole_inputs(structure, treatment, parameters, abs_site_data, **kwar
         if system_afm:
             starting_mag, tot_mag = _process_afm_system(**afm_inputs)
         elif updated_parameters['SYSTEM'].get('nspin') == 2:
-            starting_mag[abs_atom_marker] = 1
-            tot_mag += 1
+            if starting_mag:
+                starting_mag[abs_atom_marker] = 1
+            if tot_mag is not None:
+                tot_mag += 1
         else:
             starting_mag = {abs_atom_marker: 1}
             updated_parameters['SYSTEM']['nspin'] = 2
             if updated_parameters['SYSTEM'].get('occupations', None) == 'fixed':
-                if tot_mag:
+                if tot_mag is not None:
                     tot_mag += 1
                 else:
                     tot_mag = 1
 
     updated_parameters['SYSTEM']['tot_charge'] = tot_charge
-    if updated_parameters['SYSTEM'].get('nspin') == 2:
-        for kind in structure.get_kind_names():
+    if updated_parameters['SYSTEM'].get('nspin') == 2 and starting_mag:
+        structure_kind_names = structure.get_kind_names()
+        starting_mag = {
+            kind: value for kind, value in starting_mag.items()
+            if kind in structure_kind_names
+        }
+        for kind in structure_kind_names:
             if kind not in starting_mag:
                 starting_mag[kind] = 0
         updated_parameters['SYSTEM']['starting_magnetization'] = starting_mag
-        if tot_mag:
-            updated_parameters['SYSTEM']['tot_magnetization'] = tot_mag
+    if tot_mag is not None:
+        updated_parameters['SYSTEM']['tot_magnetization'] = tot_mag
 
     return updated_parameters

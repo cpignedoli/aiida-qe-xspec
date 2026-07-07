@@ -421,23 +421,26 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
         inputs = cls.get_protocol_inputs(protocol, overrides)
         pw_args = (code, structure, protocol)
 
-        relax = PwRelaxWorkChain.get_builder_from_protocol(
-            *pw_args, overrides=inputs.get('relax', None), options=options, **kwargs
-        )
+        relax = None
+        if 'relax' in inputs:
+            relax = PwRelaxWorkChain.get_builder_from_protocol(
+                *pw_args, overrides=inputs.get('relax', None), options=options, **kwargs
+            )
+            relax.pop('clean_workdir', None)
+            relax.pop('structure', None)
+            relax.pop('base_final_scf', None)
+
         ch_scf = PwBaseWorkChain.get_builder_from_protocol(
             *pw_args, overrides=inputs.get('ch_scf', None), options=options, **kwargs
         )
-
-        relax.pop('clean_workdir', None)
-        relax.pop('structure', None)
-        relax.pop('base_final_scf', None)
         ch_scf.pop('clean_workdir', None)
         ch_scf.pop('structure', None)
 
         abs_atom_marker = orm.Str(inputs['abs_atom_marker'])
         # pylint: disable=no-member
         builder = cls.get_builder()
-        builder.relax = relax
+        if relax is not None:
+            builder.relax = relax
         builder.ch_scf = ch_scf
         builder.structure = structure
         builder.abs_atom_marker = abs_atom_marker
@@ -468,7 +471,8 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
                 kpoints_mesh = DataFactory('core.array.kpoints')()
                 kpoints_mesh.set_kpoints_mesh([1, 1, 1])
                 builder.ch_scf.kpoints = kpoints_mesh
-                builder.relax.base.pw.settings = orm.Dict(dict={'gamma_only': True})
+                if relax is not None:
+                    builder.relax.base.pw.settings = orm.Dict(dict={'gamma_only': True})
                 # These are the correct input ports for v5 of AiiDA-QE, but since AiiDALab-QE requires
                 # v4.12.1 this makes the GUI part of the plugin incompatable with v5 of AiiDA-QE.
                 # builder.relax.base_init_relax.pw.settings = orm.Dict(dict={'gamma_only': True})

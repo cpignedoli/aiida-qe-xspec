@@ -44,6 +44,7 @@ def process_molecule_input(structure, **kwargs):  # pylint: disable=too-many-sta
         if site_symbol in abs_elements_list:
             equivalency_dict[f'site_{key}'] = {}
             atom_no_set = eq_atoms_data[key]
+            equivalency_dict[f'site_{key}']['kind_name'] = structure.sites[key].kind_name
             equivalency_dict[f'site_{key}']['site_index'] = key
             equivalency_dict[f'site_{key}']['equivalent_sites_list'] = atom_no_set
             equivalency_dict[f'site_{key}']['multiplicity'] = len(atom_no_set)

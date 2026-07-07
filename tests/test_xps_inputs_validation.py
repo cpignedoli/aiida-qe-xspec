@@ -1,9 +1,9 @@
-from aiida_qe_xspec.utils import load_core_hole_pseudos
-from aiida_qe_xspec.workflows.xps import XpsWorkChain
-from aiida import orm, load_profile
 import pytest
+from aiida import load_profile, orm
 from aiida.common import ValidationError
 from aiida.engine import run
+from aiida_qe_xspec.utils import load_core_hole_pseudos
+from aiida_qe_xspec.workflows.xps import XpsWorkChain
 
 load_profile()
 
@@ -85,3 +85,35 @@ def test_validate_get_builder_from_protocol(etfa_molecule):
             correction_energies=orm.Dict(correction_energies),
         )
         run(builder)
+
+
+def test_builder_allows_total_magnetization_without_starting_magnetization(etfa_molecule):
+    code = orm.load_code('qe-7.2-pw@localhost')
+    core_levels = {'C': ['1s']}
+    core_hole_pseudos, correction_energies = load_core_hole_pseudos(core_levels, 'pseudo_demo_pbe')
+
+    builder = XpsWorkChain.get_builder_from_protocol(
+        structure=etfa_molecule,
+        code=code,
+        core_hole_pseudos=core_hole_pseudos,
+        core_levels=core_levels,
+        correction_energies=orm.Dict(correction_energies),
+        overrides={
+            'ch_scf': {
+                'pw': {
+                    'parameters': {
+                        'SYSTEM': {
+                            'nspin': 2,
+                            'tot_magnetization': 1,
+                        },
+                    },
+                },
+            },
+        },
+    )
+
+    system = builder.ch_scf.pw.parameters.get_dict()['SYSTEM']
+
+    assert system['nspin'] == 2
+    assert system['tot_magnetization'] == 1
+    assert 'starting_magnetization' not in system

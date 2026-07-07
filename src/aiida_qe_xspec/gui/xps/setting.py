@@ -69,7 +69,7 @@ class XpsConfigurationSettingsPanel(
             (self._model, 'atom_indices'),
             (self.atom_indices_input, 'value'),
             [
-                lambda value: ', '.join(value),
+                lambda value: ', '.join(str(index) for index in value),
                 lambda value: [int(i.strip()) for i in value.split(',') if i.strip()],
             ],
         )
