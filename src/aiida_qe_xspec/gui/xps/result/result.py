@@ -281,10 +281,11 @@ class XpsResultsPanel(ResultsPanel[XpsResultsModel]):
         element, orbital = self.spectrum_select.value.split('_')
 
         for key, value in self._model.binding_energies[element][orbital].items():
-            site_index = key.split('_')[-1]
+            atom_index = int(key.split('_')[-1])
             data.append(
                 {
-                    'site_index': site_index,
+                    'site_index': atom_index + 1,
+                    'atom_index': atom_index,
                     'element': element,
                     'chemical_shift': round(self._model.chemical_shifts[element][orbital][key]['energy'], 2),
                     'binding_energy': round(value['energy'], 2),
@@ -304,6 +305,5 @@ class XpsResultsPanel(ResultsPanel[XpsResultsModel]):
     def _on_row_index_change(self, change):
         if change['new'] is not None:
             row_index = int(change['new'])
-            # The first row is the header, so we do +1 offset.
-            site_idx = self.result_table.data[row_index]['site_index']
-            self.structure_view.avr.selected_atoms_indices = [site_idx]
+            atom_index = self.result_table.data[row_index]['atom_index']
+            self.structure_view.avr.selected_atoms_indices = [atom_index]
