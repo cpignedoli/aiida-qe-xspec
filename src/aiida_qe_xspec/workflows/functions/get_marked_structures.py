@@ -49,6 +49,6 @@ def get_marked_structures(structure, atom_indices, marker='X'):
                 marked_structure.append_site(new_site)
         result[f'site_{index}'] = marked_structure
 
-    result['output_parameters'] = orm.Dict(dict=output_params)
+    result['output_parameters'] = orm.Dict(dict={'equivalent_sites_data': output_params})
 
     return result

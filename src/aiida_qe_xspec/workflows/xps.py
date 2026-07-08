@@ -592,11 +592,9 @@ class XpsWorkChain(ProtocolMixin, WorkChain):
             }
             result = get_marked_structures(input_structure, **inputs)
             self.ctx.supercell = input_structure
-            self.ctx.equivalent_sites_data = result.pop('output_parameters').get_dict()
-            self.out(
-                'symmetry_analysis_data',
-                orm.Dict(dict={'equivalent_sites_data': self.ctx.equivalent_sites_data}),
-            )
+            out_params = result.pop('output_parameters')
+            self.ctx.equivalent_sites_data = out_params.get_dict()['equivalent_sites_data']
+            self.out('symmetry_analysis_data', out_params)
         else:
             inputs = {
                 'absorbing_elements_list': orm.List(list(self.ctx.core_levels.keys())),

@@ -183,7 +183,7 @@ def test_marked_structures_use_symbol_for_tagged_absorber_kind():
     )
 
     marked = result['site_0']
-    output_parameters = result['output_parameters'].get_dict()
+    output_parameters = result['output_parameters'].get_dict()['equivalent_sites_data']
 
     assert [(kind.name, kind.symbol) for kind in marked.kinds] == [('X', 'O'), ('C', 'C')]
     assert [site.kind_name for site in marked.sites] == ['X', 'C']
