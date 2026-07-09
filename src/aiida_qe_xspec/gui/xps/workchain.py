@@ -1,5 +1,5 @@
 from aiida.common import ValidationError
-from aiida.orm import Bool, Dict, Float, Group, QueryBuilder
+from aiida.orm import Bool, Dict, Float, Group
 from aiida.plugins import WorkflowFactory
 from aiida_quantumespresso.common.types import ElectronicType, SpinType
 from aiida_qe_xspec.workflows.xps import XpsWorkChain
@@ -63,7 +63,7 @@ def get_builder(codes, structure, parameters, **kwargs):
     atom_indices = xps_parameters.pop('atom_indices', None)
     # load pseudo for excited-state and group-state.
     pseudo_group_label = xps_parameters.pop('pseudo_group')
-    pseudo_group = QueryBuilder().append(Group, filters={'label': pseudo_group_label}).one()[0]
+    pseudo_group = Group.collection.get(label=pseudo_group_label)
     if atom_indices:
         atom_indices, inferred_core_levels = _core_levels_for_atom_indices(structure, atom_indices, pseudo_group)
         if not core_levels:
