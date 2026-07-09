@@ -30,7 +30,7 @@ def _process_afm_system(**kwargs):
     target_site_mag = starting_mag[abs_atom_kind]
 
     final_starting_mag[abs_atom_marker] = target_site_mag
-    if treatment not in ['full', 'FCH']:
+    if treatment not in ['full', 'FCH'] and tot_mag is not None:
         if target_site_mag >= 0:
             tot_mag += 1
         else:

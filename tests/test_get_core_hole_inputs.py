@@ -139,6 +139,37 @@ def test_excited_core_hole_with_starting_magnetization_is_neutral():
     assert "tot_magnetization" not in updated["SYSTEM"]
 
 
+def test_excited_core_hole_with_afm_starting_magnetization_without_total_magnetization():
+    parameters = {
+        "SYSTEM": {
+            "nspin": 2,
+            "tot_charge": 0,
+            "starting_magnetization": {
+                "C": 0.0,
+                "O": -0.2,
+                "O1": 0.3,
+                "H": 0.0,
+            },
+        },
+    }
+
+    updated = get_core_hole_inputs(
+        structure=generate_tagged_oxygen_core_hole_structure(),
+        treatment="excited",
+        parameters=parameters,
+        abs_site_data={"site_index": 1, "symbol": "O", "kind_name": "O1"},
+    )
+
+    assert updated["SYSTEM"]["tot_charge"] == 0
+    assert updated["SYSTEM"]["starting_magnetization"] == {
+        "C": 0.0,
+        "O": -0.2,
+        "H": 0.0,
+        "X": 0.3,
+    }
+    assert "tot_magnetization" not in updated["SYSTEM"]
+
+
 def test_molecule_symmetry_data_preserves_kind_name_for_tagged_atoms():
     result = process_molecule_input(generate_formic_acid_structure(), absorbing_elements_list=["O"])
     equivalent_sites_data = result["output_params"]["equivalent_sites_data"]
