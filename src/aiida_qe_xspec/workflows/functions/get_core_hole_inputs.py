@@ -3,8 +3,6 @@
 
 Returns a `dict` object with suitable inputs for a subsequent PwCalculation
 """
-from copy import deepcopy
-
 from aiida.common import ValidationError
 
 
@@ -55,8 +53,12 @@ def get_core_hole_inputs(structure, treatment, parameters, abs_site_data, **kwar
     abs_atom_marker = kwargs.get('abs_atom_marker', 'X')
     site_index = abs_site_data['site_index']
     abs_atom_kind = abs_site_data.get('kind_name', abs_site_data['symbol'])
-    updated_parameters = deepcopy(parameters)
+    updated_parameters = parameters.copy()
+    updated_parameters['SYSTEM'] = parameters['SYSTEM'].copy()
     starting_mag = updated_parameters['SYSTEM'].get('starting_magnetization', None)
+    if starting_mag is not None:
+        starting_mag = starting_mag.copy()
+        updated_parameters['SYSTEM']['starting_magnetization'] = starting_mag
     tot_mag = updated_parameters['SYSTEM'].get('tot_magnetization', None)
     if not starting_mag and tot_mag is None and updated_parameters['SYSTEM'].get('nspin', None) == 2:
         raise ValidationError(
